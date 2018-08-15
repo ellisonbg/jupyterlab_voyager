@@ -100,7 +100,11 @@ class VoyagerWidgetFactory extends ABCWidgetFactory<
     this.app = app;
   }
   protected createNewWidget(context: DocumentRegistry.Context): VoyagerPanel {
-    return new VoyagerPanel({ context }, this.app, this.docManager);
+    return new VoyagerPanel(
+      { context, content: new Widget() },
+      this.app,
+      this.docManager
+    );
   }
 }
 
