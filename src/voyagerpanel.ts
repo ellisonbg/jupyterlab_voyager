@@ -67,7 +67,7 @@ export class VoyagerPanel extends DocumentWidget<Widget> {
     fileName?: string,
     context?: Context<DocumentRegistry.IModel>
   ) {
-    super({ ...options, content: new Widget() });
+    super({ ...options, content: options["content"] });
     this.addClass(Voyager_CLASS);
 
     this.fileType = df
