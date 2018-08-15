@@ -47,7 +47,7 @@ import { CodeCell, ICellModel } from "@jupyterlab/cells";
 import { ReadonlyJSONObject, JSONExt } from "@phosphor/coreutils";
 
 import { VoyagerTutorialWidget } from "./tutorial";
-import { VoyagerPanel, VoyagerPanel_DF, isValidFileName } from "./voyagerpanel";
+import { VoyagerPanel, isValidFileName } from "./voyagerpanel";
 import "../style/index.css";
 
 /**
@@ -307,20 +307,24 @@ function activate(
               let context = docManager.contextForWidget(cur) as Context<
                 DocumentRegistry.IModel
               >;
-              var wdg = new VoyagerPanel_DF(
+
+              var wdg = new VoyagerPanel(
+                { context, content: new Widget() },
+                app,
+                docManager,
+                true,
+                true,
                 JSONobject,
                 filename,
-                context,
-                false,
-                app,
-                docManager
+                context
               );
+
               wdg.data_src = JSONobject;
               wdg.id = filename + temp_widget_counter++;
               wdg.title.closable = true;
               wdg.title.iconClass = VOYAGER_ICON;
-              const tracker = new InstanceTracker<VoyagerPanel_DF>({
-                namespace: "VoyagerPanel_DataFrame"
+              const tracker = new InstanceTracker<VoyagerPanel>({
+                namespace: "VoyagerPanel"
               });
               tracker.add(wdg);
               app.shell.addToMainArea(wdg);
@@ -361,20 +365,22 @@ function activate(
               let context = docManager.contextForWidget(cur) as Context<
                 DocumentRegistry.IModel
               >;
-              var wdg = new VoyagerPanel_DF(
+              var wdg = new VoyagerPanel(
+                { context, content: new Widget() },
+                app,
+                docManager,
+                true,
+                true,
                 { values: JSONobject },
                 filename,
-                context,
-                true,
-                app,
-                docManager
+                context
               );
               wdg.data_src = { values: JSONobject };
               wdg.id = filename + temp_widget_counter++;
               wdg.title.closable = true;
               wdg.title.iconClass = VOYAGER_ICON;
-              const tracker = new InstanceTracker<VoyagerPanel_DF>({
-                namespace: "VoyagerPanel_DataFrame"
+              const tracker = new InstanceTracker<VoyagerPanel>({
+                namespace: "VoyagerPanel"
               });
               tracker.add(wdg);
               app.shell.addToMainArea(wdg);
@@ -387,20 +393,22 @@ function activate(
               let context = docManager.contextForWidget(cur) as Context<
                 DocumentRegistry.IModel
               >;
-              var wdg = new VoyagerPanel_DF(
+              var wdg = new VoyagerPanel(
+                { context, content: new Widget() },
+                app,
+                docManager,
+                true,
+                true,
                 { values: JSONobject },
                 filename,
-                context,
-                true,
-                app,
-                docManager
+                context
               );
               wdg.data_src = { values: JSONobject };
               wdg.id = filename + temp_widget_counter++;
               wdg.title.closable = true;
               wdg.title.iconClass = VOYAGER_ICON;
-              const tracker = new InstanceTracker<VoyagerPanel_DF>({
-                namespace: "VoyagerPanel_DataFrame"
+              const tracker = new InstanceTracker<VoyagerPanel>({
+                namespace: "VoyagerPanel"
               });
               tracker.add(wdg);
               app.shell.addToMainArea(wdg);
@@ -501,9 +509,8 @@ function activate(
         console.log(widget.id);
         console.log(widget.hasClass(Voyager_CLASS));
 
-        var datavoyager = (widget as VoyagerPanel | VoyagerPanel_DF)
-          .voyager_cur;
-        var dataSrc = (widget as VoyagerPanel | VoyagerPanel_DF).data_src;
+        var datavoyager = (widget as VoyagerPanel).voyager_cur;
+        var dataSrc = (widget as VoyagerPanel).data_src;
         //let aps = datavoyager.getApplicationState();
         let spec = datavoyager.getSpec(false);
         console.log(spec);
@@ -546,9 +553,7 @@ function activate(
       if (
         widget &&
         widget.hasClass(Voyager_CLASS) &&
-        (widget as VoyagerPanel | VoyagerPanel_DF).context.path.indexOf(
-          "vl.json"
-        ) === -1
+        (widget as VoyagerPanel).context.path.indexOf("vl.json") === -1
       ) {
         return true;
       } else {
@@ -566,9 +571,8 @@ function activate(
         console.log(widget.id);
         console.log(widget.hasClass(Voyager_CLASS));
 
-        var datavoyager = (widget as VoyagerPanel | VoyagerPanel_DF)
-          .voyager_cur;
-        var dataSrc = (widget as VoyagerPanel | VoyagerPanel_DF).data_src;
+        var datavoyager = (widget as VoyagerPanel).voyager_cur;
+        var dataSrc = (widget as VoyagerPanel).data_src;
         let spec = datavoyager.getSpec(false);
         console.log(spec);
         let src = JSON.stringify({
@@ -644,9 +648,7 @@ function activate(
       if (
         widget &&
         widget.hasClass(Voyager_CLASS) &&
-        (widget as VoyagerPanel | VoyagerPanel_DF).voyager_cur.getSpec(
-          false
-        ) !== undefined
+        (widget as VoyagerPanel).voyager_cur.getSpec(false) !== undefined
       ) {
         return true;
       } else {
@@ -811,10 +813,10 @@ function activate(
     execute: args => {
       let widget = app.shell.currentWidget;
       if (widget) {
-        if ((widget as VoyagerPanel | VoyagerPanel_DF).toolbar.isHidden) {
-          (widget as VoyagerPanel | VoyagerPanel_DF).toolbar.show();
+        if ((widget as VoyagerPanel).toolbar.isHidden) {
+          (widget as VoyagerPanel).toolbar.show();
         } else {
-          (widget as VoyagerPanel | VoyagerPanel_DF).toolbar.hide();
+          (widget as VoyagerPanel).toolbar.hide();
         }
       }
     },
@@ -877,7 +879,7 @@ function activate(
     execute: args => {
       let widget = app.shell.currentWidget;
       if (widget) {
-        (widget as VoyagerPanel | VoyagerPanel_DF).voyager_cur.undo();
+        (widget as VoyagerPanel).voyager_cur.undo();
       }
     }
   });
@@ -888,7 +890,7 @@ function activate(
     execute: args => {
       let widget = app.shell.currentWidget;
       if (widget) {
-        (widget as VoyagerPanel | VoyagerPanel_DF).voyager_cur.redo();
+        (widget as VoyagerPanel).voyager_cur.redo();
       }
       const { currentWidget } = app.shell;
       if (currentWidget) {

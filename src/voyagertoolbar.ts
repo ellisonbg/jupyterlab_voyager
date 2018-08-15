@@ -38,7 +38,6 @@ import { PromiseDelegate } from "@phosphor/coreutils";
 
 import {
   VoyagerPanel,
-  VoyagerPanel_DF,
   JUPYTER_CELL_MIME,
   isValidFileName,
   Voyager_CLASS
@@ -78,7 +77,7 @@ const TOOLBAR_REDO_CLASS = "jp-RedoIcon";
 export namespace VoyagerToolbar {
   export function setupToolbar(
     toolbar: Toolbar,
-    panel: VoyagerPanel | VoyagerPanel_DF,
+    panel: VoyagerPanel,
     app: JupyterLab,
     docManager: IDocumentManager
   ) {
@@ -98,9 +97,7 @@ export namespace VoyagerToolbar {
 }
 
 namespace Private {
-  export function createSaveButton(
-    widget: VoyagerPanel | VoyagerPanel_DF
-  ): ToolbarButton {
+  export function createSaveButton(widget: VoyagerPanel): ToolbarButton {
     return new ToolbarButton({
       className: TOOLBAR_SAVE_CLASS,
       onClick: () => {
@@ -139,7 +136,7 @@ namespace Private {
   }
 
   export function createExportButton(
-    widget: VoyagerPanel | VoyagerPanel_DF,
+    widget: VoyagerPanel,
     app: JupyterLab,
     docManager: DocumentManager
   ): ToolbarButton {
@@ -236,7 +233,7 @@ namespace Private {
   }
 
   export function createCopyButton(
-    widget: VoyagerPanel | VoyagerPanel_DF,
+    widget: VoyagerPanel,
     app: JupyterLab,
     docManager: DocumentManager
   ): ToolbarButton {
@@ -281,9 +278,7 @@ namespace Private {
     });
   }
 
-  export function createUndoButton(
-    widget: VoyagerPanel | VoyagerPanel_DF
-  ): ToolbarButton {
+  export function createUndoButton(widget: VoyagerPanel): ToolbarButton {
     return new ToolbarButton({
       className: TOOLBAR_UNDO_CLASS,
       onClick: () => {
@@ -293,9 +288,7 @@ namespace Private {
     });
   }
 
-  export function createRedoButton(
-    widget: VoyagerPanel | VoyagerPanel_DF
-  ): ToolbarButton {
+  export function createRedoButton(widget: VoyagerPanel): ToolbarButton {
     return new ToolbarButton({
       className: TOOLBAR_REDO_CLASS,
       onClick: () => {

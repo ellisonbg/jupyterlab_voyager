@@ -60,40 +60,49 @@ export class VoyagerPanel extends DocumentWidget<Widget> {
   constructor(
     options: DocumentWidget.IOptions<Widget>,
     app: JupyterLab,
-    docManager: IDocumentManager
+    docManager: IDocumentManager,
+    df = false,
+    isTable?: boolean,
+    data?: any,
+    fileName?: string,
+    context?: Context<DocumentRegistry.IModel>
   ) {
     super({ ...options, content: new Widget() });
     this.addClass(Voyager_CLASS);
-    this.fileType = PathExt.extname(this.context.localPath).substring(1);
 
-    this.title.label = PathExt.basename(this.context.path);
+    this.fileType = df
+      ? "tempory"
+      : PathExt.extname(this.context.localPath).substring(1);
 
-    this.context.model.contentChanged.connect(
-      this.update,
-      this
-    );
-    this.context.fileChanged.connect(
-      this.update,
-      this
-    );
+    if (!df) {
+      this.title.label = PathExt.basename(this.context.path);
+      this.context.model.contentChanged.connect(
+        this.update,
+        this
+      );
+      this.context.fileChanged.connect(
+        this.update,
+        this
+      );
+    }
 
     this.context.ready.then(() => {
-      const data = this.context.model.toString();
-      var values: any;
-      if (this.fileType === "txt") {
-        values = read(data, { type: "json" });
-      } else {
-        values = read(data, { type: this.fileType });
-      }
-      if (this.fileType === "json" || this.fileType === "txt") {
-        if (values["data"]) {
-          var DATA = values["data"];
+      if (df) {
+        if (isTable) {
+          this.voyager_cur = CreateVoyager(
+            this.content.node,
+            Private.VoyagerConfig as VoyagerConfig,
+            data
+          );
+        } else {
+          var DATA = data["data"];
           this.data_src = DATA;
           if (DATA["url"]) {
-            //check if it's url type datasource
             if (!Private.isValidURL(DATA["url"])) {
               let basePath = PathExt.dirname(this.context.localPath);
-              let wholePath = path.join(basePath, DATA["url"]);
+              let filePath = PathExt.basename(DATA["url"]);
+              let wholePath = path.join(basePath, filePath);
+
               docManager.services.contents.get(wholePath).then(src => {
                 let local_filetype = PathExt.extname(DATA["url"]).substring(1);
                 let local_values = read(src.content, { type: local_filetype });
@@ -102,23 +111,12 @@ export class VoyagerPanel extends DocumentWidget<Widget> {
                   Private.VoyagerConfig as VoyagerConfig,
                   { values: local_values }
                 );
-                this.voyager_cur.setSpec({
-                  mark: values["mark"],
-                  encoding: values["encoding"],
-                  height: values["height"],
-                  width: values["width"],
-                  description: values["description"],
-                  name: values["name"],
-                  selection: values["selection"],
-                  title: values["title"],
-                  transform: values["transform"]
-                });
               });
             } else {
               this.voyager_cur = CreateVoyager(
                 this.content.node,
                 Private.VoyagerConfig as VoyagerConfig,
-                values["data"]
+                data["data"]
               );
             }
           } else if (DATA["values"]) {
@@ -126,19 +124,116 @@ export class VoyagerPanel extends DocumentWidget<Widget> {
             this.voyager_cur = CreateVoyager(
               this.content.node,
               Private.VoyagerConfig as VoyagerConfig,
-              values["data"]
+              data["data"]
             );
           } else {
             //other conditions, just try to pass the value to voyager and wish the best
             this.voyager_cur = CreateVoyager(
               this.content.node,
               Private.VoyagerConfig as VoyagerConfig,
-              values["data"]
+              data["data"]
             );
-            this.data_src = values["data"];
           }
+          this.voyager_cur.setSpec({
+            mark: data["mark"],
+            encoding: data["encoding"],
+            height: data["height"],
+            width: data["width"],
+            description: data["description"],
+            name: data["name"],
+            selection: data["selection"],
+            title: data["title"],
+            transform: data["transform"]
+          });
+        }
+        this.title.label = fileName || "";
+      } else {
+        const data = this.context.model.toString();
+        var values: any;
+        if (this.fileType === "txt") {
+          values = read(data, { type: "json" });
         } else {
-          //other conditions, just try to pass the value to voyager and wish the best
+          values = read(data, { type: this.fileType });
+        }
+        if (this.fileType === "json" || this.fileType === "txt") {
+          if (values["data"]) {
+            var DATA = values["data"];
+            this.data_src = DATA;
+            if (DATA["url"]) {
+              //check if it's url type datasource
+              if (!Private.isValidURL(DATA["url"])) {
+                let basePath = PathExt.dirname(this.context.localPath);
+                let wholePath = path.join(basePath, DATA["url"]);
+                docManager.services.contents.get(wholePath).then(src => {
+                  let local_filetype = PathExt.extname(DATA["url"]).substring(
+                    1
+                  );
+                  let local_values = read(src.content, {
+                    type: local_filetype
+                  });
+                  this.voyager_cur = CreateVoyager(
+                    this.content.node,
+                    Private.VoyagerConfig as VoyagerConfig,
+                    { values: local_values }
+                  );
+                  this.voyager_cur.setSpec({
+                    mark: values["mark"],
+                    encoding: values["encoding"],
+                    height: values["height"],
+                    width: values["width"],
+                    description: values["description"],
+                    name: values["name"],
+                    selection: values["selection"],
+                    title: values["title"],
+                    transform: values["transform"]
+                  });
+                });
+              } else {
+                this.voyager_cur = CreateVoyager(
+                  this.content.node,
+                  Private.VoyagerConfig as VoyagerConfig,
+                  values["data"]
+                );
+              }
+            } else if (DATA["values"]) {
+              //check if it's array value data source
+              this.voyager_cur = CreateVoyager(
+                this.content.node,
+                Private.VoyagerConfig as VoyagerConfig,
+                values["data"]
+              );
+            } else {
+              //other conditions, just try to pass the value to voyager and wish the best
+              this.voyager_cur = CreateVoyager(
+                this.content.node,
+                Private.VoyagerConfig as VoyagerConfig,
+                values["data"]
+              );
+              this.data_src = values["data"];
+            }
+          } else {
+            //other conditions, just try to pass the value to voyager and wish the best
+            this.voyager_cur = CreateVoyager(
+              this.content.node,
+              Private.VoyagerConfig as VoyagerConfig,
+              { values }
+            );
+            this.data_src = { values };
+          }
+
+          //update the specs if possible
+          this.voyager_cur.setSpec({
+            mark: values["mark"],
+            encoding: values["encoding"],
+            height: values["height"],
+            width: values["width"],
+            description: values["description"],
+            name: values["name"],
+            selection: values["selection"],
+            title: values["title"],
+            transform: values["transform"]
+          });
+        } else {
           this.voyager_cur = CreateVoyager(
             this.content.node,
             Private.VoyagerConfig as VoyagerConfig,
@@ -146,26 +241,6 @@ export class VoyagerPanel extends DocumentWidget<Widget> {
           );
           this.data_src = { values };
         }
-
-        //update the specs if possible
-        this.voyager_cur.setSpec({
-          mark: values["mark"],
-          encoding: values["encoding"],
-          height: values["height"],
-          width: values["width"],
-          description: values["description"],
-          name: values["name"],
-          selection: values["selection"],
-          title: values["title"],
-          transform: values["transform"]
-        });
-      } else {
-        this.voyager_cur = CreateVoyager(
-          this.content.node,
-          Private.VoyagerConfig as VoyagerConfig,
-          { values }
-        );
-        this.data_src = { values };
       }
     });
 
@@ -179,6 +254,7 @@ export class VoyagerPanel extends DocumentWidget<Widget> {
   get settings(): ISettingRegistry.ISettings | null {
     return this._settings;
   }
+
   set settings(settings: ISettingRegistry.ISettings | null) {
     if (this._settings) {
       this._settings.changed.disconnect(this._onSettingsChanged, this);
@@ -217,98 +293,6 @@ export class VoyagerPanel extends DocumentWidget<Widget> {
   }
 
   private _stateChanged = new Signal<this, void>(this);
-}
-
-/**Special VoyagerPanel for using dataframe as data src */
-export class VoyagerPanel_DF extends DocumentWidget<Widget> {
-  public voyager_cur!: Voyager;
-  public data_src: any;
-  public fileType = "tempory";
-
-  constructor(
-    data: any,
-    fileName: string,
-    context: Context<DocumentRegistry.IModel>,
-    isTable: boolean,
-    app: JupyterLab,
-    docManager: IDocumentManager
-  ) {
-    super({ context, content: new Widget() });
-    this.addClass(Voyager_CLASS);
-
-    this.context.ready.then(() => {
-      if (isTable) {
-        this.voyager_cur = CreateVoyager(
-          this.content.node,
-          Private.VoyagerConfig as VoyagerConfig,
-          data
-        );
-      } else {
-        var DATA = data["data"];
-        this.data_src = DATA;
-        if (DATA["url"]) {
-          if (!Private.isValidURL(DATA["url"])) {
-            let basePath = PathExt.dirname(this.context.localPath);
-            let filePath = PathExt.basename(DATA["url"]);
-            let wholePath = path.join(basePath, filePath);
-
-            docManager.services.contents.get(wholePath).then(src => {
-              let local_filetype = PathExt.extname(DATA["url"]).substring(1);
-              let local_values = read(src.content, { type: local_filetype });
-              this.voyager_cur = CreateVoyager(
-                this.content.node,
-                Private.VoyagerConfig as VoyagerConfig,
-                { values: local_values }
-              );
-            });
-          } else {
-            this.voyager_cur = CreateVoyager(
-              this.content.node,
-              Private.VoyagerConfig as VoyagerConfig,
-              data["data"]
-            );
-          }
-        } else if (DATA["values"]) {
-          //check if it's array value data source
-          this.voyager_cur = CreateVoyager(
-            this.content.node,
-            Private.VoyagerConfig as VoyagerConfig,
-            data["data"]
-          );
-        } else {
-          //other conditions, just try to pass the value to voyager and wish the best
-          this.voyager_cur = CreateVoyager(
-            this.content.node,
-            Private.VoyagerConfig as VoyagerConfig,
-            data["data"]
-          );
-        }
-        this.voyager_cur.setSpec({
-          mark: data["mark"],
-          encoding: data["encoding"],
-          height: data["height"],
-          width: data["width"],
-          description: data["description"],
-          name: data["name"],
-          selection: data["selection"],
-          title: data["title"],
-          transform: data["transform"]
-        });
-      }
-      this.title.label = fileName;
-    });
-
-    // Toolbar
-    VoyagerToolbar.setupToolbar(this.toolbar, this, app, docManager);
-  }
-
-  /**
-   * Handle `'activate-request'` messages.
-   */
-  protected onActivateRequest(msg: Message): void {
-    this.content.node.tabIndex = -1;
-    this.content.node.focus();
-  }
 }
 
 export function isValidFileName(name: string): boolean {
